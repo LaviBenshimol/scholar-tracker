@@ -21,6 +21,8 @@ from ..models.schemas import (
 )
 from ..services.fun_jokes import get_random_joke
 from ..services.fun_quotes import get_random_quote
+from ..services.llm import chat as llm_chat
+from ..services.llm import clear_session
 from ..utils.logger import logger
 
 MAX_MESSAGE_LENGTH = 500
@@ -57,7 +59,10 @@ def handle_simulated_chat(payload: ChatRequest) -> ChatResponse:
     if not intent:
         intent = "help"
 
-    logger.info(f"Chat received intent: {intent}")
+    # Resolve user_id for LLM memory
+    sender = payload.user_id or "anonymous"
+
+    logger.info(f"Chat received intent: {intent} from {sender}")
 
     # -- Stats ---------------------------------------------------------
     if intent in ("stats", "get_stats"):
@@ -197,15 +202,23 @@ def handle_simulated_chat(payload: ChatRequest) -> ChatResponse:
             "  meme 1-5  — meme by category\n"
             "  joke      — random joke\n"
             "  quote     — motivational quote\n"
-            "  orcid <id> — load papers by ORCID"
+            "  orcid <id> — load papers by ORCID\n"
+            "  reset     — clear conversation memory"
         )
         return TextResponse(text=TextBody(body=body))
 
-    # -- Unknown -------------------------------------------------------
-    else:
+    # -- Reset ---------------------------------------------------------
+    elif intent == "reset":
+        clear_session(sender)
         return TextResponse(
-            text=TextBody(body="I didn't understand that. Type 'menu' for options.")
+            text=TextBody(body="\u2705 Conversation memory cleared. Fresh start!")
         )
+
+    # -- LLM Fallback (smart conversation) -----------------------------
+    else:
+        original_text = raw if payload.type == "text" and payload.text else intent
+        reply = llm_chat(user_id=sender, message=original_text)
+        return TextResponse(text=TextBody(body=reply))
 
 
 # ---------------------------------------------------------------------------
