@@ -67,11 +67,12 @@ class TestChatEndpoint:
         assert "stats" in body
 
     def test_unknown_intent_fallback(self, client):
-        """Unknown text should return a fallback message."""
+        """Unknown text should return an LLM response (or fallback)."""
         resp = client.post("/ui-api/chat", json={"type": "text", "text": {"body": "xyzzy123"}})
         data = resp.json()
         assert data["type"] == "text"
-        assert "menu" in data["text"]["body"].lower()
+        # LLM responds with something (not empty)
+        assert len(data["text"]["body"]) > 0
 
     def test_interactive_button_reply(self, client, fresh_db):
         """Interactive button reply (from WhatsApp) should route correctly."""

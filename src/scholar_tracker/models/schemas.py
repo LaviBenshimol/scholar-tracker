@@ -23,6 +23,7 @@ class ChatRequest(BaseModel):
     type: Literal["text", "interactive"]
     text: Optional[TextBody] = None
     interactive: Optional[InteractivePayload] = None
+    user_id: Optional[str] = None
 
 
 # -- Response Models ---------------------------------------------------------

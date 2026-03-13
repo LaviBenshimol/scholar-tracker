@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     template_name: str = "citation_update"
     template_language: str = "en"
 
+    # LLM (Groq)
+    groq_api_key: str = ""
+    llm_model: str = "moonshotai/kimi-k2-instruct-0905"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property
@@ -45,6 +49,8 @@ class Settings(BaseSettings):
             logger.warning("WHATSAPP_VERIFY_TOKEN not set — webhook verification will fail")
         if not self.scholar_author_id:
             logger.warning("SCHOLAR_AUTHOR_ID not set — auto-tracking disabled")
+        if not self.groq_api_key:
+            logger.warning("GROQ_API_KEY not set — LLM features disabled")
 
 
 settings = Settings()
