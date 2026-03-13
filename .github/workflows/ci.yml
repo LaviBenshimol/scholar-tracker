@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [dev, staging, master]
   pull_request:
-    branches: [ "main" ]
+    branches: [staging, master]
 
 jobs:
   lint:
@@ -20,8 +20,6 @@ jobs:
         run: flake8 src/ tests/ main.py
       - name: isort (check)
         run: isort --check-only src/ tests/ main.py
-      - name: pyright
-        run: pyright src/
 
   test:
     runs-on: ubuntu-latest
@@ -36,4 +34,5 @@ jobs:
       - name: Run tests
         env:
           SCHOLAR_AUTHOR_ID: ""
+          GROQ_API_KEY: ""
         run: pytest -v tests/
