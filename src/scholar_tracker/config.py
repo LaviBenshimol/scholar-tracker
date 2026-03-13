@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     # Scheduler & Tracking config
     scholar_author_id: Optional[str] = None
+    orcid_id: str = ""
     check_interval_hours: int = 24
     scraper_api_key: Optional[str] = None
 

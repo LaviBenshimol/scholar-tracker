@@ -26,7 +26,7 @@ class TestChatEndpoint:
         ids = [b["reply"]["id"] for b in buttons]
         assert "get_stats" in ids
         assert "get_meme" in ids
-        assert "help" in ids
+        assert "quote" in ids
 
     def test_stats_empty_db(self, client):
         """'stats' with no papers should say no papers tracked."""
@@ -107,3 +107,51 @@ class TestOrcidLookup:
         resp = client.get("/ui-api/lookup-orcid?orcid_id=")
         data = resp.json()
         assert "error" in data
+
+
+class TestNewCommands:
+    """Tests for quote, joke, and orcid WhatsApp commands."""
+
+    def test_quote_returns_text(self, client):
+        """'quote' should return a text response."""
+        resp = client.post("/ui-api/chat", json={"type": "text", "text": {"body": "quote"}})
+        data = resp.json()
+        assert data["type"] == "text"
+        # Should contain a quote or error message
+        assert len(data["text"]["body"]) > 0
+
+    def test_joke_returns_text(self, client):
+        """'joke' should return a text response."""
+        resp = client.post("/ui-api/chat", json={"type": "text", "text": {"body": "joke"}})
+        data = resp.json()
+        assert data["type"] == "text"
+        assert len(data["text"]["body"]) > 0
+
+    def test_orcid_without_id(self, client):
+        """'orcid' without an ID should return usage message."""
+        resp = client.post("/ui-api/chat", json={"type": "text", "text": {"body": "orcid"}})
+        data = resp.json()
+        assert data["type"] == "text"
+        assert "usage" in data["text"]["body"].lower()
+
+    def test_orcid_invalid_format(self, client):
+        """'orcid baddata' should return usage message."""
+        resp = client.post("/ui-api/chat", json={"type": "text", "text": {"body": "orcid baddata"}})
+        data = resp.json()
+        assert data["type"] == "text"
+        assert "usage" in data["text"]["body"].lower()
+
+    def test_empty_message_returns_help(self, client):
+        """Empty message should return help."""
+        resp = client.post("/ui-api/chat", json={"type": "text", "text": {"body": "   "}})
+        data = resp.json()
+        assert data["type"] == "text"
+        assert "commands" in data["text"]["body"].lower()
+
+    def test_help_includes_new_commands(self, client):
+        """Help text should mention joke, quote, and orcid."""
+        resp = client.post("/ui-api/chat", json={"type": "text", "text": {"body": "help"}})
+        body = resp.json()["text"]["body"].lower()
+        assert "joke" in body
+        assert "quote" in body
+        assert "orcid" in body

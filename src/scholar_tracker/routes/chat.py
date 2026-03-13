@@ -19,7 +19,11 @@ from ..models.schemas import (
     TextBody,
     TextResponse,
 )
+from ..services.fun_jokes import get_random_joke
+from ..services.fun_quotes import get_random_quote
 from ..utils.logger import logger
+
+MAX_MESSAGE_LENGTH = 500
 
 router = APIRouter(prefix="/ui-api")
 
@@ -43,9 +47,15 @@ MEME_CATEGORIES = {
 def handle_simulated_chat(payload: ChatRequest) -> ChatResponse:
     intent = ""
     if payload.type == "text" and payload.text:
-        intent = payload.text.body.strip().lower()
+        raw = payload.text.body.strip()
+        if len(raw) > MAX_MESSAGE_LENGTH:
+            raw = raw[:MAX_MESSAGE_LENGTH]
+        intent = raw.lower()
     elif payload.type == "interactive" and payload.interactive:
         intent = payload.interactive.button_reply.id
+
+    if not intent:
+        intent = "help"
 
     logger.info(f"Chat received intent: {intent}")
 
@@ -122,6 +132,47 @@ def handle_simulated_chat(payload: ChatRequest) -> ChatResponse:
             logger.error(f"Meme fetch error: {e}")
             return TextResponse(text=TextBody(body="Meme API is down. Try again later!"))
 
+    # -- Quote ---------------------------------------------------------
+    elif intent == "quote":
+        return TextResponse(text=TextBody(body=get_random_quote()))
+
+    # -- Joke ----------------------------------------------------------
+    elif intent == "joke":
+        return TextResponse(text=TextBody(body=get_random_joke()))
+
+    # -- ORCID ---------------------------------------------------------
+    elif intent.startswith("orcid"):
+        parts = intent.split(None, 1)
+        arg = parts[1] if len(parts) > 1 else ""
+        orcid = _extract_orcid_id(arg)
+        if not orcid:
+            return TextResponse(
+                text=TextBody(
+                    body="Usage: orcid <id>\n"
+                    "Example: orcid 0009-0003-8948-3386"
+                )
+            )
+        try:
+            data = _fetch_openalex(orcid)
+            if "error" in data:
+                return TextResponse(text=TextBody(body=data["error"]))
+            for p in data["papers"]:
+                update_paper_citations(p["title"], p["cited_by_count"])
+            name = data["author"]["name"]
+            count = len(data["papers"])
+            total = data["author"]["total_citations"]
+            body = (
+                f"✅ *Loaded {count} papers for {name}*\n"
+                f"Total citations: {total}\n"
+                f"Type 'stats' to see details."
+            )
+            return TextResponse(text=TextBody(body=body))
+        except Exception as e:
+            logger.error(f"ORCID command error: {e}")
+            return TextResponse(
+                text=TextBody(body="Failed to load ORCID data. Try again later.")
+            )
+
     # -- Menu ----------------------------------------------------------
     elif intent == "menu":
         return InteractiveResponse(
@@ -129,9 +180,9 @@ def handle_simulated_chat(payload: ChatRequest) -> ChatResponse:
                 header=InteractiveHeader(text="Scholar Tracker"),
                 body=InteractiveBody(text="What would you like to do?"),
                 action=InteractiveAction(buttons=[
-                    ButtonDef(reply=ButtonReply(id="get_stats"), title="Get Stats"),
-                    ButtonDef(reply=ButtonReply(id="get_meme"), title="Random Meme"),
-                    ButtonDef(reply=ButtonReply(id="help"), title="Help"),
+                    ButtonDef(reply=ButtonReply(id="get_stats"), title="\U0001f4ca Stats"),
+                    ButtonDef(reply=ButtonReply(id="get_meme"), title="\U0001f602 Meme"),
+                    ButtonDef(reply=ButtonReply(id="quote"), title="\U0001f4ac Quote"),
                 ]),
             ),
         )
@@ -140,11 +191,13 @@ def handle_simulated_chat(payload: ChatRequest) -> ChatResponse:
     elif intent == "help":
         body = (
             "*Commands:*\n"
-            "  menu - show menu\n"
-            "  stats - citation counts\n"
-            "  meme - random meme image\n"
-            "  meme help - list meme categories\n"
-            "  meme 1-5 - meme from specific category"
+            "  menu      — show menu\n"
+            "  stats     — citation counts\n"
+            "  meme      — random meme\n"
+            "  meme 1-5  — meme by category\n"
+            "  joke      — random joke\n"
+            "  quote     — motivational quote\n"
+            "  orcid <id> — load papers by ORCID"
         )
         return TextResponse(text=TextBody(body=body))
 
