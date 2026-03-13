@@ -17,13 +17,21 @@ from ..models.database import (
 from ..utils.logger import logger
 
 # ---------------------------------------------------------------------------
-# Load system prompt from file
+# Load system prompt from file (soul.md > system.txt > hardcoded fallback)
 # ---------------------------------------------------------------------------
-_PROMPT_PATH = Path(__file__).resolve().parent.parent.parent.parent / "prompts" / "system.txt"
-SYSTEM_PROMPT = _PROMPT_PATH.read_text(encoding="utf-8").strip() if _PROMPT_PATH.exists() else (
-    "You are ScholarBot, a helpful research assistant on WhatsApp. "
-    "Keep responses short (1-3 sentences)."
-)
+_PROMPTS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "prompts"
+_SOUL_PATH = _PROMPTS_DIR / "soul.md"
+_SYSTEM_PATH = _PROMPTS_DIR / "system.txt"
+
+if _SOUL_PATH.exists():
+    SYSTEM_PROMPT = _SOUL_PATH.read_text(encoding="utf-8").strip()
+elif _SYSTEM_PATH.exists():
+    SYSTEM_PROMPT = _SYSTEM_PATH.read_text(encoding="utf-8").strip()
+else:
+    SYSTEM_PROMPT = (
+        "You are Jarvis, a helpful research assistant on WhatsApp. "
+        "Keep responses short (1-3 sentences)."
+    )
 
 # Max recent messages to load from DB (10 turns = 20 messages)
 MAX_RECENT_MESSAGES = 20
@@ -129,16 +137,23 @@ def _build_context_messages(
             time_ctx += f" User was last active {_format_time_gap(gap)}s ago."
     messages.append({"role": "system", "content": time_ctx})
 
-    # App state
+    # App state (real data — Jarvis must use ONLY these numbers)
     try:
         papers = get_tracked_papers()
         total = get_total_citations()
         if papers:
+            paper_lines = []
+            for p in papers[:10]:  # cap at 10 to save tokens
+                paper_lines.append(
+                    f"  - \"{p['title']}\" — {p['current_citations']} citations"
+                )
+            papers_str = "\n".join(paper_lines)
             messages.append({
                 "role": "system",
                 "content": (
-                    f"User tracks {len(papers)} papers with "
-                    f"{total} total citations."
+                    f"REAL DATA (use these numbers, do not invent):\n"
+                    f"User tracks {len(papers)} papers, {total} total citations.\n"
+                    f"Papers:\n{papers_str}"
                 ),
             })
     except Exception:
