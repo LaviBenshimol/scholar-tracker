@@ -45,3 +45,5 @@ bridge/.wwebjs_cache/
 
 # Misc
 *.pdf
+test_groq.py
+prompts/soul.md
