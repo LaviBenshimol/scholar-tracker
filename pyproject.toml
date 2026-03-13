@@ -1,0 +1,43 @@
+[project]
+name = "scholar-tracker"
+version = "0.1.0"
+description = "WhatsApp-based Google Scholar citation tracker service"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "pydantic-settings>=2.2.1",
+    "httpx>=0.27.0",
+    "scholarly>=1.7.11",
+    "apscheduler>=3.10.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1.1",
+    "pytest-asyncio>=0.23.5",
+    "flake8>=7.0.0",
+    "isort>=5.13.0",
+    "pycodestyle>=2.11.0",
+    "pyright>=1.1.350",
+    "pre-commit>=3.7.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["scholar_tracker"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"

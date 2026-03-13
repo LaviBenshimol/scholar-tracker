@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Environment secrets
+.env
+
+# Database and logs
+data/
+*.log
+
+# IDE
+.vscode/
+.idea/
+.gemini/
+.agents/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Bridge (Node.js)
+bridge/node_modules/
+bridge/auth_info/
+bridge/.wwebjs_auth/
+bridge/.wwebjs_cache/
+
+# Misc
+*.pdf

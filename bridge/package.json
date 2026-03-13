@@ -1,0 +1,13 @@
+{
+  "name": "scholar-tracker-whatsapp-bridge",
+  "version": "1.0.0",
+  "description": "WhatsApp Web bridge for Scholar Tracker — scan QR and go",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "baileys": "^6.7.16",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

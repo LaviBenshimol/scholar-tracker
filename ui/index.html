@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scholar Tracker Simulator</title>
+    <style>
+        :root {
+            --wa-teal: #008069;
+            --wa-teal-light: #25d366;
+            --wa-bg: #efeae2;
+            --wa-bubble-in: #ffffff;
+            --wa-bubble-out: #d9fdd3;
+            --wa-text: #111b21;
+            --wa-text-muted: #667781;
+            --wa-border: #d1d7db;
+            --wa-panel-bg: #f0f2f5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            background-color: #d1d7db;
+        }
+
+        .app-container {
+            display: flex;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #fff;
+            box-shadow: 0 1px 1px 0 rgba(0,0,0,.06), 0 2px 5px 0 rgba(0,0,0,.2);
+        }
+
+        .sidebar {
+            width: 380px;
+            min-width: 320px;
+            background-color: white;
+            border-right: 1px solid var(--wa-border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            background-color: var(--wa-panel-bg);
+            padding: 16px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--wa-border);
+        }
+
+        .sidebar-content {
+            padding: 16px;
+            overflow-y: auto;
+            background-color: white;
+            flex: 1;
+        }
+
+        .config-group {
+            margin-bottom: 16px;
+            background: #fcfcfc;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--wa-border);
+        }
+
+        .config-group h3 {
+            font-size: 14px;
+            color: var(--wa-teal);
+            margin-bottom: 8px;
+        }
+
+        .config-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--wa-border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            outline: none;
+            font-size: 13px;
+        }
+
+        .config-group input:focus {
+            border-color: var(--wa-teal);
+        }
+
+        .wa-btn {
+            background-color: var(--wa-teal);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            width: 100%;
+            transition: 0.2s;
+        }
+
+        .wa-btn:hover { background-color: var(--wa-teal-light); }
+        .wa-btn:disabled { background-color: #aaa; cursor: not-allowed; }
+
+        #author-results { margin-top: 10px; font-size: 13px; }
+
+        .author-card {
+            padding: 10px;
+            border: 1px solid var(--wa-border);
+            border-radius: 6px;
+            margin-bottom: 4px;
+            background: white;
+        }
+
+        .paper-item {
+            padding: 8px 10px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-size: 12px;
+            border-left: 3px solid var(--wa-teal);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .paper-title { flex: 1; }
+        .paper-cites {
+            background: var(--wa-teal);
+            color: white;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-weight: 600;
+            font-size: 11px;
+            white-space: nowrap;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--wa-panel-bg);
+        }
+
+        .chat-header {
+            background-color: var(--wa-panel-bg);
+            padding: 10px 16px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--wa-border);
+        }
+
+        .chat-header-info { display: flex; flex-direction: column; }
+        .chat-name { font-size: 16px; font-weight: 500; color: var(--wa-text); }
+        .chat-status { font-size: 13px; color: var(--wa-text-muted); }
+
+        .chat-history {
+            flex: 1;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-size: contain;
+            background-color: var(--wa-bg);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            max-width: 65%;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 19px;
+            position: relative;
+            box-shadow: 0 1px 0.5px rgba(11,20,26,.13);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background-color: var(--wa-bubble-out);
+            border-top-right-radius: 0;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background-color: var(--wa-bubble-in);
+            border-top-left-radius: 0;
+            white-space: pre-wrap;
+        }
+
+        .interactive-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+            border-top: 1px solid var(--wa-border);
+            padding-top: 8px;
+        }
+
+        .interactive-btn {
+            background: transparent;
+            border: none;
+            color: #00a884;
+            font-weight: 500;
+            padding: 8px;
+            cursor: pointer;
+            text-align: center;
+            width: 100%;
+            border-bottom: 1px solid var(--wa-border);
+        }
+        .interactive-btn:last-child { border-bottom: none; }
+        .interactive-btn:hover { background-color: rgba(0,168,132,.05); border-radius: 4px; }
+
+        .time {
+            font-size: 11px;
+            color: var(--wa-text-muted);
+            float: right;
+            margin-top: 4px;
+            margin-left: 10px;
+        }
+
+        .chat-input-area {
+            background-color: var(--wa-panel-bg);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            background-color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 15px;
+            margin: 0 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2 style="font-size: 16px; font-weight: 500;">Tracker Config</h2>
+        </div>
+        <div class="sidebar-content">
+            <div class="config-group">
+                <h3>&#128279; ORCID Lookup</h3>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                    Enter your ORCID ID or full URL. Uses OpenAlex to fetch papers &amp; citation counts.
+                </p>
+                <input type="text" id="orcid-input"
+                       placeholder="e.g. 0009-0003-8948-3386"
+                       value="">
+                <button class="wa-btn" id="lookup-btn" onclick="lookupOrcid()">Lookup ORCID</button>
+                <div id="author-results"></div>
+                <div id="papers-list" style="margin-top: 10px; max-height: 340px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="config-group">
+                <h3>&#9881;&#65039; Debug Triggers</h3>
+                <button class="wa-btn" style="background-color: #667781"
+                        onclick="triggerRoutineUpdate()">MOCK: Trigger Background Job</button>
+                <p style="font-size: 11px; color: #666; margin-top: 5px;">
+                    Simulates a cron run &mdash; fakes +1 citation per paper.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-area">
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <span class="chat-name">Scholar Tracker Bot</span>
+                <span class="chat-status">Business Account</span>
+            </div>
+        </div>
+
+        <div class="chat-history" id="chat-history">
+            <div class="message received">
+                Welcome to your Scholar Tracker!
+Send "menu" to see options, or click "Lookup ORCID" in the panel to load your papers.
+                <span class="time">Just now</span>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="message-input"
+                   placeholder="Type a message" onkeypress="handleKeyPress(event)">
+            <button class="wa-btn" style="width: auto;" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+var chatHistory = document.getElementById('chat-history');
+
+function getTime() {
+    var now = new Date();
+    return now.getHours().toString().padStart(2,'0') + ':' +
+           now.getMinutes().toString().padStart(2,'0');
+}
+
+function addMessage(text, type, interactiveData) {
+    var div = document.createElement('div');
+    div.className = 'message ' + type;
+    var content = text;
+    if (interactiveData && interactiveData.buttons) {
+        content += '<div class="interactive-buttons">';
+        interactiveData.buttons.forEach(function(btn) {
+            content += '<button class="interactive-btn" onclick="sendInteractiveReply(\'' +
+                       btn.reply.id + '\',\'' + (btn.title || btn.reply.id) + '\')">' +
+                       (btn.title || btn.reply.id) + '</button>';
+        });
+        content += '</div>';
+    }
+    div.innerHTML = content + '<span class="time">' + getTime() + '</span>';
+    chatHistory.appendChild(div);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
+function sendInteractiveReply(id, title) {
+    addMessage(title, 'sent');
+    simulateWebhook({type:'interactive',interactive:{type:'button_reply',button_reply:{id:id,title:title}}});
+}
+
+function sendMessage() {
+    var input = document.getElementById('message-input');
+    var text = input.value.trim();
+    if (!text) return;
+    addMessage(text, 'sent');
+    input.value = '';
+    simulateWebhook({type:'text',text:{body:text}});
+}
+
+function handleKeyPress(e) { if (e.key==='Enter') sendMessage(); }
+
+function simulateWebhook(payload) {
+    fetch('/ui-api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(data){
+        if (data.type==='text') {
+            addMessage(data.text.body, 'received');
+        } else if (data.type==='interactive') {
+            addMessage('<b>'+data.interactive.header.text+'</b><br/>'+data.interactive.body.text,
+                       'received', data.interactive.action);
+        }
+    })
+    .catch(function(){addMessage('Error communicating with server.','received');});
+}
+
+/* ---- ORCID Lookup ---- */
+
+function lookupOrcid() {
+    var query   = document.getElementById('orcid-input').value.trim();
+    var results = document.getElementById('author-results');
+    var papers  = document.getElementById('papers-list');
+    var btn     = document.getElementById('lookup-btn');
+
+    papers.innerHTML = '';
+
+    if (!query) {
+        results.innerHTML = '<span style="color:#e74c3c">Please enter an ORCID ID or URL.</span>';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Looking up...';
+    results.innerHTML = '<span style="color:#667781">Querying OpenAlex...</span>';
+
+    fetch('/ui-api/lookup-orcid?orcid_id=' + encodeURIComponent(query))
+    .then(function(r){return r.json();})
+    .then(function(data){
+        if (data.error) {
+            results.innerHTML = '<span style="color:#e74c3c">' + data.error + '</span>';
+            return;
+        }
+        if (data.author) {
+            var a = data.author;
+            results.innerHTML =
+                '<div class="author-card">' +
+                '<b>' + a.name + '</b><br/>' +
+                '<a href="' + a.orcid_url + '" target="_blank" style="color:#008069; font-size:12px;">' + a.orcid_url + '</a><br/>' +
+                '<span style="color:#667781; font-size:12px;">' + a.total_works + ' works &bull; ' + a.total_citations + ' total citations</span>' +
+                '</div>';
+
+            if (data.papers && data.papers.length) {
+                var html = '<div style="font-size:12px; color:#008069; font-weight:500; margin-bottom:6px;">Publications (sorted by citations):</div>';
+                for (var i = 0; i < data.papers.length; i++) {
+                    var p = data.papers[i];
+                    var yr = p.year ? ' (' + p.year + ')' : '';
+                    html += '<div class="paper-item">' +
+                            '<span class="paper-title">' + (i+1) + '. ' + p.title + yr + '</span>' +
+                            '<span class="paper-cites">' + p.cited_by_count + '</span>' +
+                            '</div>';
+                }
+                papers.innerHTML = html;
+            }
+
+            // Also post a summary into the chat
+            var chatMsg = 'Profile loaded: ' + a.name + '\n' +
+                          a.total_works + ' works, ' + a.total_citations + ' total citations.\n\n' +
+                          'Papers seeded into tracker DB. Type "stats" for details.';
+            addMessage(chatMsg, 'received');
+        }
+    })
+    .catch(function(){
+        results.innerHTML = '<span style="color:#e74c3c">Network error.</span>';
+    })
+    .finally(function(){
+        btn.disabled = false;
+        btn.textContent = 'Lookup ORCID';
+    });
+}
+
+/* ---- Mock background job ---- */
+
+function triggerRoutineUpdate() {
+    fetch('/ui-api/trigger-job',{method:'POST'})
+    .then(function(r){return r.json();})
+    .then(function(data){
+        if (data.status==='ok') {
+            addMessage(data.notification || 'No new citations.', 'received');
+        }
+    })
+    .catch(function(){addMessage('Error triggering job.','received');});
+}
+</script>
+</body>
+</html>
